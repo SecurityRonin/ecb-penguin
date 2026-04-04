@@ -383,6 +383,82 @@
 
         .kd-mono { font-family: inherit; }
         .kd-key  { color: var(--warning); }
+
+        /* ── Panel 3: ECB vs GCM Data Flow ── */
+        .df-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .df-col { display: flex; flex-direction: column; align-items: stretch; }
+
+        .df-col-head {
+            text-align: center;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.4rem;
+            border-radius: 6px;
+            margin-bottom: 0.75rem;
+        }
+
+        .df-head-danger { background: #3a1212; color: var(--danger); }
+        .df-head-safe   { background: #122a1c; color: var(--success); }
+
+        .df-stage {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.5rem 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            transition: border-color 0.25s, background 0.25s;
+        }
+
+        .df-stage.df-active-ecb  { border-color: var(--danger);  background: #1f0d0d; }
+        .df-stage.df-active-gcm  { border-color: var(--success); background: #0d1f0d; }
+        .df-stage.df-active-box  { border-color: var(--accent);  background: #0d1f3a; }
+
+        .df-stage-label { font-size: 0.6rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+        .df-stage-val   { font-size: 0.72rem; word-break: break-all; }
+        .df-identical   { color: var(--warning); }
+
+        .df-stage-box { align-items: center; justify-content: center; min-height: 2.5rem; }
+        .df-stage-box .df-stage-label { font-size: 0.7rem; text-align: center; text-transform: none; letter-spacing: 0; color: var(--text); }
+
+        .df-down-arrow {
+            text-align: center;
+            color: var(--muted);
+            font-size: 1.1rem;
+            line-height: 1.4;
+        }
+
+        .df-warn {
+            margin-top: 0.75rem;
+            background: #3a1212;
+            color: var(--danger);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .df-safe {
+            margin-top: 0.75rem;
+            background: #122a1c;
+            color: var(--success);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .df-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
@@ -500,6 +576,99 @@
         <div class="kd-controls">
             <button class="btn-secondary" onclick="kdResetStep()">Reset</button>
             <button class="btn-primary" id="keyDeriveStep" onclick="kdNextStep()">Step →</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Panel 3: ECB vs GCM Data Flow ── -->
+<div class="edu-panel" id="ecbVsGcm">
+    <div class="edu-panel-title">ECB vs GCM — block-by-block data flow</div>
+    <div class="edu-panel-body">
+        <p class="edu-desc">Two identical plaintext blocks go into each mode. Click <strong>Step</strong> to watch what comes out.</p>
+        <div class="df-grid">
+
+            <!-- ECB column -->
+            <div class="df-col">
+                <div class="df-col-head df-head-danger">AES-ECB</div>
+
+                <div class="df-stage" id="dfEcbP1">
+                    <span class="df-stage-label">Block A (plaintext)</span>
+                    <span class="df-stage-val df-identical">a3 f0 12 7c 88 3e 55 d1 …</span>
+                </div>
+                <div class="df-down-arrow">↓</div>
+                <div class="df-stage df-stage-box" id="dfEcbBox1">
+                    <span class="df-stage-label">AES_K( · )</span>
+                </div>
+                <div class="df-down-arrow">↓</div>
+                <div class="df-stage" id="dfEcbC1">
+                    <span class="df-stage-label">Ciphertext A</span>
+                    <span class="df-stage-val" id="dfEcbCv1">—</span>
+                </div>
+
+                <div style="height:1rem"></div>
+
+                <div class="df-stage" id="dfEcbP2">
+                    <span class="df-stage-label">Block B (identical plaintext)</span>
+                    <span class="df-stage-val df-identical">a3 f0 12 7c 88 3e 55 d1 …</span>
+                </div>
+                <div class="df-down-arrow">↓</div>
+                <div class="df-stage df-stage-box" id="dfEcbBox2">
+                    <span class="df-stage-label">AES_K( · )</span>
+                </div>
+                <div class="df-down-arrow">↓</div>
+                <div class="df-stage" id="dfEcbC2">
+                    <span class="df-stage-label">Ciphertext B</span>
+                    <span class="df-stage-val" id="dfEcbCv2">—</span>
+                </div>
+
+                <div class="df-warn" id="ecbDupeWarn" style="display:none">
+                    ⚠️ Ciphertext A = Ciphertext B — pattern preserved!
+                </div>
+            </div>
+
+            <!-- GCM column -->
+            <div class="df-col">
+                <div class="df-col-head df-head-safe">AES-GCM</div>
+
+                <div class="df-stage" id="dfGcmP1">
+                    <span class="df-stage-label">Block A (plaintext)</span>
+                    <span class="df-stage-val df-identical">a3 f0 12 7c 88 3e 55 d1 …</span>
+                </div>
+                <div class="df-down-arrow">↓</div>
+                <div class="df-stage df-stage-box" id="dfGcmBox1">
+                    <span class="df-stage-label">CTR(K, nonce+0) ⊕ block</span>
+                </div>
+                <div class="df-down-arrow">↓</div>
+                <div class="df-stage" id="dfGcmC1">
+                    <span class="df-stage-label">Ciphertext A</span>
+                    <span class="df-stage-val" id="dfGcmCv1">—</span>
+                </div>
+
+                <div style="height:1rem"></div>
+
+                <div class="df-stage" id="dfGcmP2">
+                    <span class="df-stage-label">Block B (identical plaintext)</span>
+                    <span class="df-stage-val df-identical">a3 f0 12 7c 88 3e 55 d1 …</span>
+                </div>
+                <div class="df-down-arrow">↓</div>
+                <div class="df-stage df-stage-box" id="dfGcmBox2">
+                    <span class="df-stage-label">CTR(K, nonce+1) ⊕ block</span>
+                </div>
+                <div class="df-down-arrow">↓</div>
+                <div class="df-stage" id="dfGcmC2">
+                    <span class="df-stage-label">Ciphertext B</span>
+                    <span class="df-stage-val" id="dfGcmCv2">—</span>
+                </div>
+
+                <div class="df-safe" id="gcmSafeNote" style="display:none">
+                    ✓ Ciphertext A ≠ Ciphertext B — pattern hidden!
+                </div>
+            </div>
+        </div>
+
+        <div class="kd-controls" style="margin-top:1rem">
+            <button class="btn-secondary" onclick="dfReset()">Reset</button>
+            <button class="btn-primary" id="ecbGcmStep" onclick="dfNextStep()">Step →</button>
         </div>
     </div>
 </div>
@@ -864,6 +1033,84 @@ function kdResetStep() {
     updateKeyHex();
     initBlockAnatomy();
 })();
+
+/* ─── Panel 3: ECB vs GCM Data Flow ─────────────────────────── */
+let dfStep = -1;
+const DF_PLAIN = new Uint8Array([0xa3,0xf0,0x12,0x7c,0x88,0x3e,0x55,0xd1,
+                                  0x04,0xb9,0xc7,0x2a,0x6f,0xd3,0x91,0x0e]);
+
+async function dfNextStep() {
+    const pass    = sanitizeKey(document.getElementById('keyInput').value) || 'empty';
+    const size    = parseInt(document.getElementById('keySize').value);
+
+    if (dfStep === -1) {
+        // Pre-compute both ciphertexts before first step displays
+        const keyBytes  = await deriveKeyBytes(pass, size);
+        const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-CBC' }, false, ['encrypt']);
+        const enc = await crypto.subtle.encrypt({ name: 'AES-CBC', iv: new Uint8Array(16) }, cryptoKey, DF_PLAIN);
+        const ecbResult = new Uint8Array(enc).slice(0, 16);
+        const ecbHex = hex(ecbResult).match(/.{2}/g).slice(0, 4).join(' ') + ' …';
+        document.getElementById('dfEcbCv1').textContent = ecbHex;
+        document.getElementById('dfEcbCv2').textContent = ecbHex; // identical — ECB!
+
+        const gcm1 = await encryptGCMBlock(DF_PLAIN, pass, size, 0);
+        const gcm2 = await encryptGCMBlock(DF_PLAIN, pass, size, 1);
+        document.getElementById('dfGcmCv1').textContent = hex(gcm1.slice(0, 4)).match(/.{2}/g).join(' ') + ' …';
+        document.getElementById('dfGcmCv2').textContent = hex(gcm2.slice(0, 4)).match(/.{2}/g).join(' ') + ' …';
+    }
+
+    const steps = [
+        ['dfEcbP1',   'dfGcmP1',   false],
+        ['dfEcbBox1', 'dfGcmBox1', true ],
+        ['dfEcbC1',   'dfGcmC1',   false],
+        ['dfEcbP2',   'dfGcmP2',   false],
+        ['dfEcbBox2', 'dfGcmBox2', true ],
+        ['dfEcbC2',   'dfGcmC2',   false],
+    ];
+
+    dfStep = Math.min(dfStep + 1, steps.length - 1);
+
+    // Clear all active classes
+    document.querySelectorAll('#ecbVsGcm .df-stage').forEach(el =>
+        el.classList.remove('df-active-ecb', 'df-active-gcm', 'df-active-box')
+    );
+
+    // Re-apply up to current step
+    for (let i = 0; i <= dfStep; i++) {
+        const [ecbId, gcmId, isBox] = steps[i];
+        document.getElementById(ecbId).classList.add(isBox ? 'df-active-box' : 'df-active-ecb');
+        document.getElementById(gcmId).classList.add(isBox ? 'df-active-box' : 'df-active-gcm');
+    }
+
+    if (dfStep === steps.length - 1) {
+        document.getElementById('ecbDupeWarn').style.display = 'block';
+        document.getElementById('gcmSafeNote').style.display = 'block';
+        document.getElementById('ecbGcmStep').disabled = true;
+    }
+}
+
+function dfReset() {
+    dfStep = -1;
+    document.querySelectorAll('#ecbVsGcm .df-stage').forEach(el =>
+        el.classList.remove('df-active-ecb', 'df-active-gcm', 'df-active-box')
+    );
+    document.getElementById('ecbDupeWarn').style.display = 'none';
+    document.getElementById('gcmSafeNote').style.display = 'none';
+    document.getElementById('ecbGcmStep').disabled = false;
+    ['dfEcbCv1','dfEcbCv2','dfGcmCv1','dfGcmCv2'].forEach(id =>
+        document.getElementById(id).textContent = '—'
+    );
+}
+
+async function encryptGCMBlock(plainBlock, passphrase, keySize, blockIndex) {
+    const keyBytes  = await deriveKeyBytes(passphrase, keySize);
+    const cryptoKey = await crypto.subtle.importKey('raw', keyBytes, { name: 'AES-GCM' }, false, ['encrypt']);
+    // Deterministic nonce for demo: 11 zero bytes + block index byte
+    const iv = new Uint8Array(12);
+    iv[11] = blockIndex;
+    const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, cryptoKey, plainBlock);
+    return new Uint8Array(enc).slice(0, plainBlock.length);
+}
 </script>
 </body>
 </html>
