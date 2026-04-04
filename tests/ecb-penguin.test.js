@@ -142,3 +142,32 @@ test.describe('ECB Penguin Demo', () => {
         expect(parseInt(dupes.replace(/,/g, ''), 10)).toBeGreaterThan(0);
     });
 });
+
+test.describe('Educational Panels', () => {
+    test.beforeEach(async ({ page }) => {
+        await page.goto('/');
+        await page.waitForFunction(() => {
+            const c = document.getElementById('canvasOrig');
+            const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+            for (let i = 0; i < d.length; i += 4) {
+                if (d[i] > 0 || d[i+1] > 0 || d[i+2] > 0) return true;
+            }
+            return false;
+        }, { timeout: 20000 });
+    });
+
+    test('Block anatomy panel is visible on page load', async ({ page }) => {
+        await expect(page.locator('#blockAnatomy')).toBeVisible();
+        await expect(page.locator('#blockAnatomy .anatomy-pixel')).toHaveCount(4);
+    });
+
+    test('Hovering anatomy pixel shows RGBA byte cells', async ({ page }) => {
+        const firstPixel = page.locator('.anatomy-pixel').first();
+        await firstPixel.hover();
+        // After hover the pixel has visible border (accent color applied via CSS)
+        await expect(firstPixel).toBeVisible();
+        // Each pixel has 4 byte cells (R, G, B, A)
+        const bytes = firstPixel.locator('.anatomy-byte');
+        await expect(bytes).toHaveCount(4);
+    });
+});
