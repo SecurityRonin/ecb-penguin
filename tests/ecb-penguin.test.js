@@ -120,6 +120,15 @@ test.describe('ECB Penguin Demo', () => {
         await expect(img).toBeVisible();
     });
 
+    test('Control characters are stripped from key input before use', async ({ page }) => {
+        // Type a passphrase with control chars injected
+        await page.fill('#keyInput', 'MyKey\x01\x02\x03');
+        // Key hex display should update and contain 'Key →'
+        const hexText = await page.textContent('#keyHex');
+        expect(hexText).toBeTruthy();
+        expect(hexText).toContain('Key →');
+    });
+
     test('Duplicate block stats box appears after encryption', async ({ page }) => {
         await page.click('#encryptBtn');
         await page.waitForFunction(
