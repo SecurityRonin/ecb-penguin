@@ -330,6 +330,59 @@
             gap: 0.5rem;
             justify-content: flex-end;
         }
+
+        .kd-flow {
+            display: flex;
+            align-items: stretch;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .kd-arrow {
+            color: var(--muted);
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .kd-stage {
+            background: var(--bg);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 0.6rem 0.8rem;
+            transition: border-color 0.2s, background 0.2s;
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .kd-stage.kd-active {
+            border-color: var(--accent);
+            background: #0d1f3a;
+        }
+
+        .kd-stage-final.kd-active {
+            border-color: var(--success);
+            background: #0d1f0d;
+        }
+
+        .kd-stage-label {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--muted);
+            margin-bottom: 0.3rem;
+        }
+
+        .kd-stage-val {
+            font-size: 0.72rem;
+            color: var(--text);
+            word-break: break-all;
+            line-height: 1.3;
+        }
+
+        .kd-mono { font-family: inherit; }
+        .kd-key  { color: var(--warning); }
     </style>
 </head>
 <body>
@@ -412,6 +465,44 @@
             </div>
         </div>
     </div>
+
+<!-- ── Panel 2: Key Derivation ── -->
+<div class="edu-panel" id="keyDerivation">
+    <div class="edu-panel-title">How the key is derived</div>
+    <div class="edu-panel-body">
+        <p class="edu-desc">Your passphrase is hashed with SHA-256, then the first 16 (or 32) bytes become the AES key. Click <strong>Step</strong> to walk through it.</p>
+        <div class="kd-flow" id="kdFlow">
+            <div class="kd-stage" id="kd0">
+                <div class="kd-stage-label">Passphrase</div>
+                <div class="kd-stage-val" id="kdPass">—</div>
+            </div>
+            <div class="kd-arrow">→</div>
+            <div class="kd-stage" id="kd1">
+                <div class="kd-stage-label">TextEncoder</div>
+                <div class="kd-stage-val kd-mono" id="kdEncoded">UTF-8 bytes</div>
+            </div>
+            <div class="kd-arrow">→</div>
+            <div class="kd-stage" id="kd2">
+                <div class="kd-stage-label">SHA-256</div>
+                <div class="kd-stage-val kd-mono" id="kdHash">32-byte hash</div>
+            </div>
+            <div class="kd-arrow">→</div>
+            <div class="kd-stage" id="kd3">
+                <div class="kd-stage-label">Slice 0…15</div>
+                <div class="kd-stage-val kd-mono" id="kdSlice">first 16 bytes</div>
+            </div>
+            <div class="kd-arrow">→</div>
+            <div class="kd-stage kd-stage-final" id="kd4">
+                <div class="kd-stage-label">AES Key</div>
+                <div class="kd-stage-val kd-mono kd-key" id="kdKey">—</div>
+            </div>
+        </div>
+        <div class="kd-controls">
+            <button class="btn-secondary" onclick="kdResetStep()">Reset</button>
+            <button class="btn-primary" id="keyDeriveStep" onclick="kdNextStep()">Step →</button>
+        </div>
+    </div>
+</div>
 
     <div class="stats" id="statsBox">
         <div class="stats-title">Block Analysis</div>
@@ -710,6 +801,61 @@ function initBlockAnatomy() {
         }
         row.appendChild(pxDiv);
     }
+}
+
+/* ─── Panel 2: Key Derivation ───────────────────────────────── */
+let kdStep = -1;
+
+async function kdNextStep() {
+    const pass = sanitizeKey(document.getElementById('keyInput').value) || 'empty';
+    const size = parseInt(document.getElementById('keySize').value);
+    const raw  = new TextEncoder().encode(pass);
+    const hash = await crypto.subtle.digest('SHA-256', raw);
+    const hashBytes = new Uint8Array(hash);
+    const keyBytes  = hashBytes.slice(0, size);
+
+    kdStep = Math.min(kdStep + 1, 4);
+
+    // Clear all active states
+    for (let i = 0; i <= 4; i++) {
+        document.getElementById('kd' + i).classList.remove('kd-active');
+    }
+
+    if (kdStep >= 0) {
+        document.getElementById('kdPass').textContent = '"' + pass + '"';
+        document.getElementById('kd0').classList.add('kd-active');
+    }
+    if (kdStep >= 1) {
+        const preview = Array.from(raw.slice(0, 6)).map(b => b.toString(16).padStart(2, '0')).join(' ');
+        document.getElementById('kdEncoded').textContent = raw.length + ' bytes: ' + preview + '…';
+        document.getElementById('kd1').classList.add('kd-active');
+    }
+    if (kdStep >= 2) {
+        document.getElementById('kdHash').textContent = hex(hashBytes).slice(0, 24) + '…';
+        document.getElementById('kd2').classList.add('kd-active');
+    }
+    if (kdStep >= 3) {
+        document.getElementById('kdSlice').textContent = 'bytes 0–' + (size - 1);
+        document.getElementById('kd3').classList.add('kd-active');
+    }
+    if (kdStep >= 4) {
+        document.getElementById('kdKey').textContent = hex(keyBytes);
+        document.getElementById('kd4').classList.add('kd-active');
+        document.getElementById('keyDeriveStep').disabled = true;
+    }
+}
+
+function kdResetStep() {
+    kdStep = -1;
+    for (let i = 0; i <= 4; i++) {
+        document.getElementById('kd' + i).classList.remove('kd-active');
+    }
+    document.getElementById('kdPass').textContent    = '—';
+    document.getElementById('kdEncoded').textContent = 'UTF-8 bytes';
+    document.getElementById('kdHash').textContent    = '32-byte hash';
+    document.getElementById('kdSlice').textContent   = 'first 16 bytes';
+    document.getElementById('kdKey').textContent     = '—';
+    document.getElementById('keyDeriveStep').disabled = false;
 }
 
 /* ─── Init ─────────────────────────────────────────────────────── */
