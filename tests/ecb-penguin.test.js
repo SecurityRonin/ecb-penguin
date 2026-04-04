@@ -170,4 +170,26 @@ test.describe('Educational Panels', () => {
         const bytes = firstPixel.locator('.anatomy-byte');
         await expect(bytes).toHaveCount(4);
     });
+
+    test('Key derivation panel is visible', async ({ page }) => {
+        await expect(page.locator('#keyDerivation')).toBeVisible();
+    });
+
+    test('Key derivation step button advances highlight', async ({ page }) => {
+        const btn = page.locator('#keyDeriveStep');
+        await btn.click();
+        const active = page.locator('.kd-stage.kd-active');
+        await expect(active).toHaveCount(1);
+    });
+
+    test('Key derivation shows final key after all steps', async ({ page }) => {
+        // Click through all 5 steps (indices 0-4)
+        for (let i = 0; i < 5; i++) {
+            await page.click('#keyDeriveStep');
+        }
+        const keyText = await page.textContent('#kdKey');
+        // Should show hex key (32 chars for AES-128 = 16 bytes)
+        expect(keyText).toMatch(/^[0-9a-f]+$/);
+        expect(keyText.length).toBe(32);
+    });
 });
