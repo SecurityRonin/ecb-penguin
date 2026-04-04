@@ -30,7 +30,10 @@ test.describe('Security headers', () => {
 
     test('CSP header is present', async ({ request }) => {
         const res = await request.get('/');
-        expect(res.headers()['content-security-policy']).toBeTruthy();
+        const csp = res.headers()['content-security-policy'];
+        expect(csp).toBeTruthy();
+        expect(csp).toContain("default-src 'none'");
+        expect(csp).toContain("frame-ancestors 'none'");
     });
 });
 
