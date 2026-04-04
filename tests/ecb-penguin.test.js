@@ -192,4 +192,24 @@ test.describe('Educational Panels', () => {
         expect(keyText).toMatch(/^[0-9a-f]+$/);
         expect(keyText.length).toBe(32);
     });
+
+    test('ECB vs GCM data flow panel is visible', async ({ page }) => {
+        await expect(page.locator('#ecbVsGcm')).toBeVisible();
+    });
+
+    test('ECB vs GCM step button activates two stages', async ({ page }) => {
+        await page.click('#ecbGcmStep');
+        // One stage active in ECB column, one in GCM column
+        const ecbActive = page.locator('#ecbVsGcm .df-col:first-child .df-stage.df-active-ecb, #ecbVsGcm .df-col:first-child .df-stage.df-active-box');
+        const gcmActive = page.locator('#ecbVsGcm .df-col:last-child .df-stage.df-active-gcm, #ecbVsGcm .df-col:last-child .df-stage.df-active-box');
+        await expect(ecbActive).toHaveCount(1);
+        await expect(gcmActive).toHaveCount(1);
+    });
+
+    test('ECB duplicate warning appears after all steps', async ({ page }) => {
+        // 6 steps total
+        for (let i = 0; i < 6; i++) await page.click('#ecbGcmStep');
+        await expect(page.locator('#ecbDupeWarn')).toBeVisible();
+        await expect(page.locator('#gcmSafeNote')).toBeVisible();
+    });
 });
