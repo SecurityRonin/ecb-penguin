@@ -243,6 +243,93 @@
         @media (max-width: 720px) {
             .panels { grid-template-columns: 1fr; }
         }
+
+        /* ── Educational panels ── */
+        .edu-panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 1.25rem 1.5rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .edu-panel-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--muted);
+            margin-bottom: 1rem;
+        }
+
+        .edu-desc {
+            font-size: 0.82rem;
+            color: var(--muted);
+            margin-bottom: 1rem;
+            line-height: 1.5;
+        }
+
+        .anatomy-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .anatomy-pixel {
+            display: flex;
+            gap: 3px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            padding: 4px;
+            transition: border-color 0.15s;
+        }
+
+        .anatomy-pixel:hover { border-color: var(--accent); }
+
+        .anatomy-byte {
+            width: 28px;
+            height: 42px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.58rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            transition: background 0.15s, color 0.15s;
+            background: var(--surface2);
+            color: var(--muted);
+            border: 1px solid var(--border);
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .anatomy-byte .byte-label { font-size: 0.52rem; opacity: 0.7; }
+        .anatomy-byte .byte-val   { font-size: 0.64rem; }
+
+        .anatomy-byte.ch-r { background: #3a1212; color: #f47c7c; border-color: #f47c7c44; }
+        .anatomy-byte.ch-g { background: #122a1c; color: #7cf49a; border-color: #7cf49a44; }
+        .anatomy-byte.ch-b { background: #0f1f3a; color: #7cb8f4; border-color: #7cb8f444; }
+        .anatomy-byte.ch-a { background: #2a2a2a; color: #c9d1d9; border-color: #c9d1d944; }
+
+        .anatomy-bracket {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px;
+            margin-top: 0.35rem;
+        }
+
+        .anatomy-bracket-label {
+            font-size: 0.68rem;
+            color: var(--accent);
+        }
+
+        .kd-controls {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 <body>
@@ -309,6 +396,20 @@
             </div>
             <canvas id="canvasGCM" width="256" height="256"></canvas>
             <div class="panel-foot" id="gcmFoot">Click <strong>Encrypt</strong> — result will look like random noise</div>
+        </div>
+    </div>
+
+    <!-- ── Panel 1: Block Anatomy ── -->
+    <div class="edu-panel" id="blockAnatomy">
+        <div class="edu-panel-title">What is one AES block?</div>
+        <div class="edu-panel-body">
+            <p class="edu-desc">One AES block = <strong>16 bytes</strong> = 4 consecutive pixels. Each pixel is 4 bytes: <span style="color:#f47c7c">R</span>, <span style="color:#7cf49a">G</span>, <span style="color:#7cb8f4">B</span>, <span style="color:#c9d1d9">A</span>. Hover a pixel to inspect its bytes.</p>
+            <div class="anatomy-row" id="anatomyRow">
+                <!-- 4 pixel cells injected by JS -->
+            </div>
+            <div class="anatomy-bracket">
+                <span class="anatomy-bracket-label">↑ 4 pixels × 4 bytes = 16 bytes = 1 AES-128 block</span>
+            </div>
         </div>
     </div>
 
@@ -586,10 +687,36 @@ function setStatus(msg) {
     document.getElementById('statusBar').textContent = msg;
 }
 
+/* ─── Block Anatomy Panel ───────────────────────────────────────── */
+function initBlockAnatomy() {
+    const row = document.getElementById('anatomyRow');
+    const ctx = document.getElementById('canvasOrig').getContext('2d');
+    // Read 4 pixels from row 128 (middle of image — interesting colors)
+    const d = ctx.getImageData(0, 128, 4, 1).data;
+    const channels = ['R', 'G', 'B', 'A'];
+    const classes   = ['ch-r', 'ch-g', 'ch-b', 'ch-a'];
+
+    for (let p = 0; p < 4; p++) {
+        const pxDiv = document.createElement('div');
+        pxDiv.className = 'anatomy-pixel';
+        for (let c = 0; c < 4; c++) {
+            const val = d[p * 4 + c];
+            const byteDiv = document.createElement('div');
+            byteDiv.className = `anatomy-byte ${classes[c]}`;
+            byteDiv.innerHTML =
+                `<span class="byte-label">${channels[c]}</span>` +
+                `<span class="byte-val">${val.toString(16).padStart(2, '0')}</span>`;
+            pxDiv.appendChild(byteDiv);
+        }
+        row.appendChild(pxDiv);
+    }
+}
+
 /* ─── Init ─────────────────────────────────────────────────────── */
 (async () => {
     await drawTux(document.getElementById('canvasOrig'));
     updateKeyHex();
+    initBlockAnatomy();
 })();
 </script>
 </body>
