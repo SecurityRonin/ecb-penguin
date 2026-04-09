@@ -295,10 +295,11 @@
         /* ── Status bar ── */
         #statusBar {
             text-align: center;
-            padding: 0.6rem;
+            padding: 0.3rem;
             font-size: 0.8rem;
             color: var(--muted);
-            min-height: 2rem;
+            min-height: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         /* ── Progress ring ── */
@@ -908,34 +909,6 @@
 
     <div id="statusBar"></div>
 
-    <!-- ── Bit Flip Attack ── -->
-    <div class="edu-panel" id="bitFlipPanel" style="display:none">
-        <div class="edu-panel-title">Bit Flip Attack — Why Authentication Matters</div>
-        <div class="edu-panel-body">
-            <p class="edu-desc">Click any pixel on the <strong>ECB ciphertext canvas</strong> above to flip a block. Watch how each mode responds to tampered data.</p>
-            <div class="bf-grid">
-                <div class="bf-col">
-                    <div class="bf-col-head df-head-danger">ECB — Tampered Decryption</div>
-                    <canvas id="bfEcbResult" width="256" height="256" class="bf-canvas"></canvas>
-                    <div class="bf-foot" id="bfEcbFoot">Flip a byte on the ECB canvas above…</div>
-                </div>
-                <div class="bf-col">
-                    <div class="bf-col-head df-head-safe">GCM — Tampered Decryption</div>
-                    <div id="bfGcmFail" class="bf-gcm-fail" style="display:none">
-                        <div class="bf-auth-fail">
-                            <div style="font-size:1rem;font-weight:700;color:#fff;">AUTHENTICATION FAILED</div>
-                            <div style="font-size:0.68rem;color:#fff;opacity:0.85;">1 bit flip detected — entire decryption refused</div>
-                        </div>
-                    </div>
-                    <div class="bf-foot" id="bfGcmFoot">Flip a byte on the ECB canvas above…</div>
-                </div>
-            </div>
-            <div class="kd-controls" style="margin-top:1rem">
-                <button class="btn-secondary" onclick="bfReset()">Reset Flip</button>
-            </div>
-        </div>
-    </div>
-
     <div class="explainer" id="explainer" style="margin-bottom:1.75rem">
         <h3>⚠️  Why ECB Leaks Information</h3>
         <p>
@@ -1463,6 +1436,7 @@ async function doEncrypt() {
 
         document.getElementById('decryptBtn').disabled = false;
         document.getElementById('bitFlipPanel').style.display = 'block';
+        renderBytes(document.getElementById('bfEcbResult'), lastEcbBytes);
         setStatus('Done — notice how ECB preserves the penguin\'s silhouette. GCM reveals nothing.');
     } catch (e) {
         setStatus('Error: ' + e.message);
@@ -1657,13 +1631,13 @@ async function doDecrypt() {
 
 /* ─── Bit Flip Attack ─────────────────────────────────────────── */
 function initBitFlip() {
-    document.getElementById('canvasECB').addEventListener('click', handleBitFlip);
+    document.getElementById('bfEcbResult').addEventListener('click', handleBitFlip);
 }
 
 async function handleBitFlip(e) {
     if (!lastEcbBytes) return;
 
-    const canvas = document.getElementById('canvasECB');
+    const canvas = document.getElementById('bfEcbResult');
     const rect = canvas.getBoundingClientRect();
     const scaleX = W / rect.width;
     const scaleY = H / rect.height;
@@ -1937,6 +1911,34 @@ async function encryptGCMBlock(plainBlock, passphrase, keySize, blockIndex) {
     return new Uint8Array(enc).slice(0, plainBlock.length);
 }
 </script>
+
+<!-- ── Bit Flip Attack ── -->
+<div class="edu-panel" id="bitFlipPanel" style="display:none">
+    <div class="edu-panel-title">Bit Flip Attack — Why Authentication Matters</div>
+    <div class="edu-panel-body">
+        <p class="edu-desc">Click any pixel on the <strong>ECB — Tampered Decryption</strong> canvas below to flip a block. Watch how each mode responds to tampered data.</p>
+        <div class="bf-grid">
+            <div class="bf-col">
+                <div class="bf-col-head df-head-danger">ECB — Tampered Decryption</div>
+                <canvas id="bfEcbResult" width="256" height="256" class="bf-canvas" style="cursor:crosshair;"></canvas>
+                <div class="bf-foot" id="bfEcbFoot">Click any pixel above to flip a block…</div>
+            </div>
+            <div class="bf-col">
+                <div class="bf-col-head df-head-safe">GCM — Tampered Decryption</div>
+                <div id="bfGcmFail" class="bf-gcm-fail" style="display:none">
+                    <div class="bf-auth-fail">
+                        <div style="font-size:1rem;font-weight:700;color:#fff;">AUTHENTICATION FAILED</div>
+                        <div style="font-size:0.68rem;color:#fff;opacity:0.85;">1 bit flip detected — entire decryption refused</div>
+                    </div>
+                </div>
+                <div class="bf-foot" id="bfGcmFoot">Click any pixel on the ECB canvas to flip a block…</div>
+            </div>
+        </div>
+        <div class="kd-controls" style="margin-top:1rem">
+            <button class="btn-secondary" onclick="bfReset()">Reset Flip</button>
+        </div>
+    </div>
+</div>
 
 <footer style="text-align:center;padding:2rem 1rem 1rem;font-size:0.7rem;color:var(--muted);">
     <div style="display:flex;align-items:center;justify-content:center;gap:1rem;margin-bottom:0.5rem;flex-wrap:wrap;">

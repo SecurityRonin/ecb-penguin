@@ -335,7 +335,7 @@ test.describe('Educational Panels', () => {
         );
 
         // Click center of ECB canvas
-        await page.click('#canvasECB', { position: { x: 128, y: 128 } });
+        await page.click('#bfEcbResult', { position: { x: 128, y: 128 } });
 
         // Wait for async decryption to complete
         await page.waitForFunction(
