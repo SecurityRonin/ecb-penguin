@@ -284,21 +284,21 @@ test.describe('Educational Panels', () => {
         await expect(page.locator('#realWorldImpact')).toBeVisible();
     });
 
-    test('Timeline nodes are clickable and expand details', async ({ page }) => {
-        const firstNode = page.locator('.tl-node').first();
-        await firstNode.click();
-        const detail = page.locator('.tl-detail.tl-open');
-        await expect(detail).toHaveCount(1);
+    test('All timeline details are open by default', async ({ page }) => {
+        const openDetails = page.locator('.tl-detail.tl-open');
+        await expect(openDetails).toHaveCount(4);
     });
 
-    test('Clicking different timeline node switches expanded detail', async ({ page }) => {
+    test('Clicking a timeline node collapses to accordion', async ({ page }) => {
         const nodes = page.locator('.tl-node');
+        // Click first node — collapses all, re-opens only first (but it was open, so toggle closes it)
         await nodes.nth(0).click();
-        await expect(page.locator('.tl-detail.tl-open')).toHaveCount(1);
+        // tlToggle: wasOpen=true for node 0, so closes all and doesn't reopen
+        await expect(page.locator('.tl-detail.tl-open')).toHaveCount(0);
 
+        // Click node 2 — opens only node 2
         await nodes.nth(2).click();
         await expect(page.locator('.tl-detail.tl-open')).toHaveCount(1);
-        // Third node (index 2) should be open
         const openDetail = page.locator('.tl-detail.tl-open');
         const openId = await openDetail.getAttribute('id');
         expect(openId).toBe('tlDetail2');

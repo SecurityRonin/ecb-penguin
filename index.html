@@ -3,7 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ECB Penguin — Interactive Crypto Demo</title>
+    <title>ECB Penguin — Interactive AES Encryption Demo | Why ECB Mode Is Broken</title>
+    <meta name="description" content="Interactive ECB Penguin demo: see why AES-ECB mode leaks information by encrypting the Linux Tux mascot. Compare ECB vs GCM encryption, try decryption with wrong keys, and learn about padding oracle attacks (BEAST, POODLE, Lucky13). Free educational tool for cryptography.">
+    <meta name="keywords" content="ECB penguin, ECB mode, AES encryption demo, block cipher modes, ECB vs GCM, ECB vs CBC, electronic codebook, AES-ECB insecure, cryptography visualization, encryption demo, Tux penguin encryption, padding oracle attack, BEAST attack, POODLE attack, Lucky13, TLS 1.3, Qualys SSL Labs, AEAD, authenticated encryption, semantic security, crypto education">
+    <meta name="author" content="Albert Hui (法證黑客) — Security Ronin">
+    <link rel="canonical" href="https://ecb-penguin.securityronin.com/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="ECB Penguin — Why Electronic Codebook Encryption Is Broken">
+    <meta property="og:description" content="Encrypt the Linux Tux penguin with AES-ECB and AES-GCM side by side. See why ECB leaks the image silhouette while GCM produces random noise. Interactive demo with decryption, block analysis, and real-world TLS/SSL impact timeline.">
+    <meta property="og:url" content="https://ecb-penguin.securityronin.com/">
+    <meta property="og:site_name" content="Security Ronin">
+    <meta property="og:image" content="https://upload.wikimedia.org/wikipedia/commons/5/56/Tux.jpg">
+    <meta property="og:image:alt" content="Linux Tux penguin encrypted with ECB mode showing visible silhouette pattern">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="ECB Penguin — Why Electronic Codebook Encryption Is Broken">
+    <meta name="twitter:description" content="Interactive demo: encrypt Tux with AES-ECB vs AES-GCM. See why ECB mode leaks patterns. Try wrong-key decryption. Learn about padding oracle attacks.">
+    <meta name="twitter:image" content="https://upload.wikimedia.org/wikipedia/commons/5/56/Tux.jpg">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "ECB Penguin — Interactive Crypto Demo",
+        "description": "Interactive visualization demonstrating why AES-ECB (Electronic Codebook) mode is insecure. Encrypt the Linux Tux penguin and see the silhouette preserved in ECB while AES-GCM produces random noise. Includes decryption, block analysis, key derivation walkthrough, and a timeline of real-world attacks from BEAST to POODLE.",
+        "url": "https://ecb-penguin.securityronin.com/",
+        "applicationCategory": "EducationalApplication",
+        "operatingSystem": "Any",
+        "author": {
+            "@type": "Person",
+            "name": "Albert Hui",
+            "alternateName": "法證黑客",
+            "url": "https://linktr.ee/4n6h4x0r"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "Security Ronin",
+            "url": "https://www.securityronin.com"
+        },
+        "about": [
+            { "@type": "Thing", "name": "ECB Penguin" },
+            { "@type": "Thing", "name": "Block cipher mode of operation" },
+            { "@type": "Thing", "name": "AES encryption" },
+            { "@type": "Thing", "name": "Authenticated encryption" },
+            { "@type": "Thing", "name": "Padding oracle attack" }
+        ],
+        "educationalLevel": "Beginner",
+        "inLanguage": "en",
+        "isAccessibleForFree": true
+    }
+    </script>
     <style>
         :root {
             --bg: #0d1117;
@@ -137,6 +190,8 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: relative;
+            z-index: 3;
         }
 
         .panel-title { font-weight: 600; font-size: 0.85rem; }
@@ -168,6 +223,9 @@
             color: var(--muted);
             min-height: 2rem;
             line-height: 1.4;
+            position: relative;
+            z-index: 3;
+            background: var(--surface);
         }
 
         /* ── Stats ── */
@@ -645,8 +703,8 @@
             <a href="http://linktr.ee/4n6h4x0r" target="_blank" rel="noopener" style="font-size:0.75rem;color:var(--accent);text-decoration:none;">linktr.ee/4n6h4x0r</a>
         </div>
     </div>
-        <h1>🐧 ECB Penguin</h1>
-        <p>Why Electronic Codebook mode encryption is fundamentally broken — visualized with Linux Tux</p>
+        <h1>🐧 ECB Penguin — Interactive AES Encryption Demo</h1>
+        <p>Why Electronic Codebook (ECB) mode encryption is fundamentally broken — visualized by encrypting Linux Tux with AES-ECB vs AES-GCM</p>
     </header>
 
     <div class="controls">
@@ -702,12 +760,40 @@
                 <span class="badge badge-safe">SECURE</span>
             </div>
             <canvas id="canvasGCM" width="256" height="256"></canvas>
-            <div id="gcmAuthOverlay" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(248,81,73,0.85);flex-direction:column;align-items:center;justify-content:center;z-index:2;">
+            <div id="gcmAuthOverlay" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(180,30,30,0.92);flex-direction:column;align-items:center;justify-content:center;z-index:2;">
                 <div style="font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:0.3rem;">AUTHENTICATION FAILED</div>
-                <div style="font-size:0.7rem;color:#ffcdd2;">Wrong key or tampered ciphertext</div>
+                <div style="font-size:0.7rem;color:#fff;opacity:0.85;">Wrong key or tampered ciphertext</div>
             </div>
             <div class="panel-foot" id="gcmFoot">Click <strong>Encrypt</strong> — result will look like random noise</div>
         </div>
+    </div>
+
+    <div class="explainer" id="explainer">
+        <h3>⚠️  Why ECB Leaks Information</h3>
+        <p>
+            <strong>AES-ECB (Electronic Codebook)</strong> divides the data into fixed <code>16-byte blocks</code>
+            and encrypts each one independently with the same key.
+            This means <strong>identical plaintext blocks always produce identical ciphertext blocks</strong>.
+            Tux's large, flat-colored regions (black body, white belly, sky background) each contain
+            many consecutive identical 16-byte chunks — all of which encrypt to the same ciphertext value.
+            The spatial structure of the image is perfectly preserved in the output.
+        </p>
+        <p>
+            <strong>AES-GCM (Galois/Counter Mode)</strong> uses a random 96-bit <code>nonce</code> per message
+            combined with an incrementing counter. Each block gets a unique keystream regardless of plaintext,
+            so even identical bytes encrypt to entirely different values. The result is computationally
+            indistinguishable from random noise. GCM also adds a 128-bit <code>authentication tag</code>,
+            ensuring ciphertext integrity.
+        </p>
+        <p>
+            The ECB penguin visual proof originated in a cryptography presentation
+            (the original presenter is unknown) and was
+            <a href="https://en.wikipedia.org/wiki/File:Tux_ecb.jpg" target="_blank" rel="noopener" style="color:var(--accent)">recreated for Wikipedia</a>
+            by user Lunkwill in January 2004. It was later
+            <a href="https://words.filippo.io/the-ecb-penguin/" target="_blank" rel="noopener" style="color:var(--accent)">investigated and enhanced by Filippo Valsorda</a>
+            in 2013. It remains one of cryptography's most famous visual proofs that
+            <em>semantic security requires more than just a secret key</em>.
+        </p>
     </div>
 
     <!-- ── Panel 1: Block Anatomy ── -->
@@ -889,14 +975,14 @@
             </div>
         </div>
 
-        <div class="tl-detail" id="tlDetail0">
+        <div class="tl-detail tl-open" id="tlDetail0">
             <h4>ECB — Never Used in Any Internet Protocol</h4>
             <p>ECB is so fundamentally broken that <strong>no version of SSL or TLS has ever used it</strong>. The protocol designers skipped it entirely. Qualys SSL Labs doesn't even test for ECB — there's nothing to test.</p>
             <p><strong>NIST IR 8459 (2024)</strong> proposes formally retiring ECB as a confidentiality mode. <strong>OWASP</strong> states plainly: "ECB should not be used."</p>
             <p class="tl-takeaway">If a product encrypts data with ECB mode, it has a fundamental design flaw — not a configuration issue.</p>
         </div>
 
-        <div class="tl-detail" id="tlDetail1">
+        <div class="tl-detail tl-open" id="tlDetail1">
             <h4>CBC — Better, But Vulnerable to Padding Attacks</h4>
             <p>CBC mode chains blocks together, hiding the patterns that ECB leaks. But it introduced a new weakness: <strong>padding verification</strong>.</p>
             <p>After decryption, the receiver checks if the PKCS#7 padding is valid — the last N bytes should all equal N. If the server responds differently to "bad padding" vs "bad data" — even through <strong>timing differences as small as microseconds</strong> — an attacker can flip ciphertext bits and observe the response to <strong>deduce the plaintext byte by byte</strong>, without ever knowing the key.</p>
@@ -904,7 +990,7 @@
             <p class="tl-takeaway">Products using TLS 1.0–1.2 with CBC cipher suites should be assessed for padding oracle mitigations.</p>
         </div>
 
-        <div class="tl-detail" id="tlDetail2">
+        <div class="tl-detail tl-open" id="tlDetail2">
             <h4>The Kill Chain: Four Attacks That Ended CBC</h4>
             <div class="tl-attacks">
                 <div class="tl-attack">
@@ -931,7 +1017,7 @@
             <p class="tl-takeaway">Each attack proved CBC's padding verification is an inherent liability — patching one variant doesn't prevent the next.</p>
         </div>
 
-        <div class="tl-detail" id="tlDetail3">
+        <div class="tl-detail tl-open" id="tlDetail3">
             <h4>GCM — The Modern Standard</h4>
             <p><strong>TLS 1.3 (2018) eliminated CBC entirely</strong>, requiring only AEAD modes: GCM and ChaCha20-Poly1305. Authentication and encryption are inseparable — there is no padding to attack.</p>
             <p><strong>Qualys SSL Labs</strong> requires GCM/AEAD cipher suites for an A+ grade. Without them, your grade is capped. Without TLS 1.3, you're capped at A-.</p>
@@ -969,29 +1055,6 @@
                 <span class="stat-val">16 bytes (128-bit)</span>
             </div>
         </div>
-    </div>
-
-    <div class="explainer" id="explainer" style="display:none">
-        <h3>⚠️  Why ECB Leaks Information</h3>
-        <p>
-            <strong>AES-ECB (Electronic Codebook)</strong> divides the data into fixed <code>16-byte blocks</code>
-            and encrypts each one independently with the same key.
-            This means <strong>identical plaintext blocks always produce identical ciphertext blocks</strong>.
-            Tux's large, flat-colored regions (black body, white belly, sky background) each contain
-            many consecutive identical 16-byte chunks — all of which encrypt to the same ciphertext value.
-            The spatial structure of the image is perfectly preserved in the output.
-        </p>
-        <p>
-            <strong>AES-GCM (Galois/Counter Mode)</strong> uses a random 96-bit <code>nonce</code> per message
-            combined with an incrementing counter. Each block gets a unique keystream regardless of plaintext,
-            so even identical bytes encrypt to entirely different values. The result is computationally
-            indistinguishable from random noise. GCM also adds a 128-bit <code>authentication tag</code>,
-            ensuring ciphertext integrity.
-        </p>
-        <p>
-            The ECB penguin is one of cryptography's most famous visual proofs that
-            <em>semantic security requires more than just a secret key</em>.
-        </p>
     </div>
 
     <div id="statusBar"></div>
@@ -1189,6 +1252,7 @@ function blockStats(pixelData) {
 
 /* ─── Main actions ─────────────────────────────────────────────── */
 async function doEncrypt() {
+    doReset();
     const pass = sanitizeKey(document.getElementById('keyInput').value);
     const keySize = parseInt(document.getElementById('keySize').value);
     const btn = document.getElementById('encryptBtn');
@@ -1228,7 +1292,7 @@ async function doEncrypt() {
         document.getElementById('sRatio').textContent  = dupePercent + '%';
         document.getElementById('sKey').textContent    = hex(kb);
         document.getElementById('statsBox').style.display = 'block';
-        document.getElementById('explainer').style.display = 'block';
+        // explainer is always visible
 
         document.getElementById('decryptBtn').disabled = false;
         setStatus('Done — notice how ECB preserves the penguin\'s silhouette. GCM reveals nothing.');
@@ -1248,7 +1312,7 @@ function doReset() {
     document.getElementById('ecbFoot').innerHTML = 'Click <strong>Encrypt</strong> — penguin shape will remain visible';
     document.getElementById('gcmFoot').innerHTML = 'Click <strong>Encrypt</strong> — result will look like random noise';
     document.getElementById('statsBox').style.display = 'none';
-    document.getElementById('explainer').style.display = 'none';
+    // explainer is always visible
     lastEcbBytes = null;
     lastGcmFull = null;
     lastGcmIv = null;
