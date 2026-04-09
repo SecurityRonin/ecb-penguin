@@ -318,6 +318,43 @@ test.describe('Educational Panels', () => {
         await expect(page.locator('#canvasHeatmap')).toBeVisible();
     });
 
+    test('Bit flip panel appears after encryption', async ({ page }) => {
+        await page.click('#encryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Done'),
+            { timeout: 60000 }
+        );
+        await expect(page.locator('#bitFlipPanel')).toBeVisible();
+    });
+
+    test('Clicking ECB canvas triggers bit flip attack demo', async ({ page }) => {
+        await page.click('#encryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Done'),
+            { timeout: 60000 }
+        );
+
+        // Click center of ECB canvas
+        await page.click('#canvasECB', { position: { x: 128, y: 128 } });
+
+        // Wait for async decryption to complete
+        await page.waitForFunction(
+            () => document.getElementById('bfEcbFoot').textContent.includes('block'),
+            { timeout: 30000 }
+        );
+
+        // ECB side should show the decrypted result canvas
+        const bfEcbCanvas = page.locator('#bfEcbResult');
+        await expect(bfEcbCanvas).toBeVisible();
+
+        // ECB footer should mention block corruption
+        const ecbMsg = await page.textContent('#bfEcbFoot');
+        expect(ecbMsg).toContain('1 block');
+
+        // GCM side should show auth failure
+        await expect(page.locator('#bfGcmFail')).toBeVisible();
+    });
+
     test('ECB duplicate warning appears after all steps', async ({ page }) => {
         // 6 steps total
         for (let i = 0; i < 6; i++) await page.click('#ecbGcmStep');
