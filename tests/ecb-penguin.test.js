@@ -128,6 +128,22 @@ test.describe('ECB Penguin Demo', () => {
         expect(result).toBe('MyKeyHello');
     });
 
+    test('Decrypt button exists and is disabled before encryption', async ({ page }) => {
+        const btn = page.locator('#decryptBtn');
+        await expect(btn).toBeVisible();
+        await expect(btn).toBeDisabled();
+    });
+
+    test('Decrypt button is enabled after encryption', async ({ page }) => {
+        await page.click('#encryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Done'),
+            { timeout: 60000 }
+        );
+        const btn = page.locator('#decryptBtn');
+        await expect(btn).toBeEnabled();
+    });
+
     test('Duplicate block stats box appears after encryption', async ({ page }) => {
         await page.click('#encryptBtn');
         await page.waitForFunction(
