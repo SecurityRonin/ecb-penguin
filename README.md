@@ -1,7 +1,7 @@
 # ECB Penguin — Interactive AES Encryption Demo
 
 [![Netlify Status](https://api.netlify.com/api/v1/badges/placeholder/deploy-status)](https://ecb-penguin.securityronin.com)
-[![License: CC BY-NC 4.0](https://img.shields.io/badge/License-CC%20BY--NC%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc/4.0/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Sponsor](https://img.shields.io/badge/Sponsor-♥-ea4aaa?logo=github)](https://github.com/sponsors/h4x0r)
 
 **See why Electronic Codebook (ECB) mode is broken — by encrypting the Linux Tux penguin with AES-ECB vs AES-GCM, live in your browser.**
@@ -65,7 +65,7 @@ Tux the penguin was created by Larry Ewing using GIMP.
 
 ## License
 
-[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) — free to share and adapt for non-commercial use with attribution.
+[MIT License](https://opensource.org/licenses/MIT) — free to use, modify, and distribute.
 
 Copyright (c) 2026 Albert Hui <albert@securityronin.com>
 
