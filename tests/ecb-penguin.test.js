@@ -280,6 +280,30 @@ test.describe('Educational Panels', () => {
         await expect(gcmActive).toHaveCount(1);
     });
 
+    test('Real-world impact panel is visible', async ({ page }) => {
+        await expect(page.locator('#realWorldImpact')).toBeVisible();
+    });
+
+    test('Timeline nodes are clickable and expand details', async ({ page }) => {
+        const firstNode = page.locator('.tl-node').first();
+        await firstNode.click();
+        const detail = page.locator('.tl-detail.tl-open');
+        await expect(detail).toHaveCount(1);
+    });
+
+    test('Clicking different timeline node switches expanded detail', async ({ page }) => {
+        const nodes = page.locator('.tl-node');
+        await nodes.nth(0).click();
+        await expect(page.locator('.tl-detail.tl-open')).toHaveCount(1);
+
+        await nodes.nth(2).click();
+        await expect(page.locator('.tl-detail.tl-open')).toHaveCount(1);
+        // Third node (index 2) should be open
+        const openDetail = page.locator('.tl-detail.tl-open');
+        const openId = await openDetail.getAttribute('id');
+        expect(openId).toBe('tlDetail2');
+    });
+
     test('ECB duplicate warning appears after all steps', async ({ page }) => {
         // 6 steps total
         for (let i = 0; i < 6; i++) await page.click('#ecbGcmStep');
