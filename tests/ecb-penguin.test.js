@@ -144,6 +144,25 @@ test.describe('ECB Penguin Demo', () => {
         await expect(btn).toBeEnabled();
     });
 
+    test('Decrypt with correct key restores ECB canvas to original', async ({ page }) => {
+        const origPixels = await canvasPixels(page, 'canvasOrig');
+
+        await page.click('#encryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Done'),
+            { timeout: 60000 }
+        );
+
+        await page.click('#decryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Decryption complete'),
+            { timeout: 60000 }
+        );
+
+        const ecbDecrypted = await canvasPixels(page, 'canvasECB');
+        expect(ecbDecrypted).toEqual(origPixels);
+    });
+
     test('Duplicate block stats box appears after encryption', async ({ page }) => {
         await page.click('#encryptBtn');
         await page.waitForFunction(
