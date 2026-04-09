@@ -704,6 +704,68 @@
 .tl-attack-desc {
     color: var(--muted);
 }
+
+/* ── Bit Flip Attack ── */
+.bf-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.bf-col { display: flex; flex-direction: column; align-items: stretch; }
+
+.bf-col-head {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 0.4rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+}
+
+.bf-canvas {
+    width: 100%;
+    aspect-ratio: 1/1;
+    image-rendering: pixelated;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+
+.bf-gcm-fail {
+    width: 100%;
+    aspect-ratio: 1/1;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.bf-auth-fail {
+    background: rgba(180,30,30,0.92);
+    border-radius: 6px;
+    padding: 2rem;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.bf-foot {
+    font-size: 0.72rem;
+    color: var(--muted);
+    padding: 0.4rem 0;
+    min-height: 1.5rem;
+    line-height: 1.4;
+}
+
+@media (max-width: 600px) {
+    .bf-grid { grid-template-columns: 1fr; }
+}
     </style>
 </head>
 <body>
@@ -961,6 +1023,34 @@
         <div class="kd-controls" style="margin-top:1rem">
             <button class="btn-secondary" onclick="dfReset()">Reset</button>
             <button class="btn-primary" id="ecbGcmStep" onclick="dfNextStep()">Step →</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Bit Flip Attack ── -->
+<div class="edu-panel" id="bitFlipPanel" style="display:none">
+    <div class="edu-panel-title">Bit Flip Attack — Why Authentication Matters</div>
+    <div class="edu-panel-body">
+        <p class="edu-desc">Click any pixel on the <strong>ECB ciphertext canvas</strong> above to flip a block. Watch how each mode responds to tampered data.</p>
+        <div class="bf-grid">
+            <div class="bf-col">
+                <div class="bf-col-head df-head-danger">ECB — Tampered Decryption</div>
+                <canvas id="bfEcbResult" width="256" height="256" class="bf-canvas"></canvas>
+                <div class="bf-foot" id="bfEcbFoot">Flip a byte on the ECB canvas above…</div>
+            </div>
+            <div class="bf-col">
+                <div class="bf-col-head df-head-safe">GCM — Tampered Decryption</div>
+                <div id="bfGcmFail" class="bf-gcm-fail" style="display:none">
+                    <div class="bf-auth-fail">
+                        <div style="font-size:1rem;font-weight:700;color:#fff;">AUTHENTICATION FAILED</div>
+                        <div style="font-size:0.68rem;color:#fff;opacity:0.85;">1 bit flip detected — entire decryption refused</div>
+                    </div>
+                </div>
+                <div class="bf-foot" id="bfGcmFoot">Flip a byte on the ECB canvas above…</div>
+            </div>
+        </div>
+        <div class="kd-controls" style="margin-top:1rem">
+            <button class="btn-secondary" onclick="bfReset()">Reset Flip</button>
         </div>
     </div>
 </div>
@@ -1318,6 +1408,7 @@ async function doEncrypt() {
         // explainer is always visible
 
         document.getElementById('decryptBtn').disabled = false;
+        document.getElementById('bitFlipPanel').style.display = 'block';
         setStatus('Done — notice how ECB preserves the penguin\'s silhouette. GCM reveals nothing.');
     } catch (e) {
         setStatus('Error: ' + e.message);
@@ -1342,6 +1433,8 @@ function doReset() {
     document.getElementById('canvasHeatmap').style.display = 'none';
     document.getElementById('heatmapBtn').classList.remove('hm-active');
     heatmapVisible = false;
+    document.getElementById('bitFlipPanel').style.display = 'none';
+    bfReset();
     document.getElementById('decryptBtn').disabled = true;
     const overlay = document.getElementById('gcmAuthOverlay');
     if (overlay) overlay.style.display = 'none';
@@ -1508,6 +1601,67 @@ async function doDecrypt() {
     btn.textContent = 'Decrypt';
 }
 
+/* ─── Bit Flip Attack ─────────────────────────────────────────── */
+function initBitFlip() {
+    document.getElementById('canvasECB').addEventListener('click', handleBitFlip);
+}
+
+async function handleBitFlip(e) {
+    if (!lastEcbBytes) return;
+
+    const canvas = document.getElementById('canvasECB');
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = W / rect.width;
+    const scaleY = H / rect.height;
+    const x = Math.floor((e.clientX - rect.left) * scaleX);
+    const y = Math.floor((e.clientY - rect.top) * scaleY);
+    const pixelIdx = (y * W + x) * 4;
+    const blockIdx = Math.floor(pixelIdx / 16) * 16;
+
+    const pass = sanitizeKey(document.getElementById('keyInput').value);
+    const keySize = parseInt(document.getElementById('keySize').value);
+
+    // Flip all 16 bytes in the target block
+    const flipped = new Uint8Array(lastEcbBytes);
+    for (let i = blockIdx; i < blockIdx + 16 && i < flipped.length; i++) {
+        flipped[i] ^= 0xFF;
+    }
+
+    // ECB: decrypt flipped ciphertext — only the flipped block is corrupted
+    try {
+        const ecbDec = await decryptECB(flipped, pass, keySize);
+        renderBytes(document.getElementById('bfEcbResult'), ecbDec);
+        const blockNum = Math.floor(blockIdx / 16);
+        document.getElementById('bfEcbFoot').innerHTML =
+            '<strong style="color:var(--danger)">Attacker modified 1 block (#' + blockNum + ') — only that block corrupted. Rest decrypts perfectly. No error detected.</strong>';
+    } catch (err) {
+        document.getElementById('bfEcbFoot').textContent = 'Error: ' + err.message;
+    }
+
+    // GCM: flip same bytes in GCM ciphertext — auth fails
+    if (lastGcmFull) {
+        const gcmFlipped = new Uint8Array(lastGcmFull);
+        for (let i = blockIdx; i < blockIdx + 16 && i < gcmFlipped.length - 16; i++) {
+            gcmFlipped[i] ^= 0xFF;
+        }
+        try {
+            await decryptGCM(gcmFlipped, pass, keySize, lastGcmIv);
+        } catch (err) {
+            document.getElementById('bfGcmFail').style.display = 'flex';
+            document.getElementById('bfGcmFoot').innerHTML =
+                '<strong style="color:var(--success)">GCM detected the tampering — decryption refused entirely. Even 1 flipped block breaks the auth tag.</strong>';
+        }
+    }
+}
+
+function bfReset() {
+    document.getElementById('bfEcbFoot').textContent = 'Flip a byte on the ECB canvas above…';
+    document.getElementById('bfGcmFoot').textContent = 'Flip a byte on the ECB canvas above…';
+    document.getElementById('bfGcmFail').style.display = 'none';
+    const ctx = document.getElementById('bfEcbResult').getContext('2d');
+    ctx.clearRect(0, 0, W, H);
+}
+
 /* ─── Panel 4: Real-World Impact Timeline ─────────────────────── */
 function tlToggle(idx) {
     const wasOpen = document.getElementById('tlDetail' + idx).classList.contains('tl-open');
@@ -1608,6 +1762,7 @@ function toggleHeatmap() {
     await drawTux(document.getElementById('canvasOrig'));
     updateKeyHex();
     initBlockAnatomy();
+    initBitFlip();
 })();
 
 /* ─── Panel 3: ECB vs GCM Data Flow ─────────────────────────── */
