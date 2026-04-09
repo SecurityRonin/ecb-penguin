@@ -163,6 +163,45 @@ test.describe('ECB Penguin Demo', () => {
         expect(ecbDecrypted).toEqual(origPixels);
     });
 
+    test('Decrypt with correct key restores GCM canvas to original', async ({ page }) => {
+        const origPixels = await canvasPixels(page, 'canvasOrig');
+
+        await page.click('#encryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Done'),
+            { timeout: 60000 }
+        );
+
+        await page.click('#decryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Decryption complete'),
+            { timeout: 60000 }
+        );
+
+        const gcmDecrypted = await canvasPixels(page, 'canvasGCM');
+        expect(gcmDecrypted).toEqual(origPixels);
+    });
+
+    test('Decrypt with wrong key shows GCM auth failure overlay', async ({ page }) => {
+        await page.click('#encryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Done'),
+            { timeout: 60000 }
+        );
+
+        // Change passphrase to wrong key
+        await page.fill('#keyInput', 'WrongKeyEntirely');
+
+        await page.click('#decryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Decryption complete'),
+            { timeout: 60000 }
+        );
+
+        // GCM auth overlay should be visible
+        await expect(page.locator('#gcmAuthOverlay')).toBeVisible();
+    });
+
     test('Duplicate block stats box appears after encryption', async ({ page }) => {
         await page.click('#encryptBtn');
         await page.waitForFunction(
