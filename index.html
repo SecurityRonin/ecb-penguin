@@ -128,6 +128,7 @@
             overflow: hidden;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
 
         .panel-head {
@@ -573,6 +574,10 @@
                 <span class="badge badge-safe">SECURE</span>
             </div>
             <canvas id="canvasGCM" width="256" height="256"></canvas>
+            <div id="gcmAuthOverlay" style="display:none;position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(248,81,73,0.85);flex-direction:column;align-items:center;justify-content:center;z-index:2;">
+                <div style="font-size:1.1rem;font-weight:700;color:#fff;margin-bottom:0.3rem;">AUTHENTICATION FAILED</div>
+                <div style="font-size:0.7rem;color:#ffcdd2;">Wrong key or tampered ciphertext</div>
+            </div>
             <div class="panel-foot" id="gcmFoot">Click <strong>Encrypt</strong> — result will look like random noise</div>
         </div>
     </div>
@@ -1034,6 +1039,8 @@ function doReset() {
     lastGcmFull = null;
     lastGcmIv = null;
     document.getElementById('decryptBtn').disabled = true;
+    const overlay = document.getElementById('gcmAuthOverlay');
+    if (overlay) overlay.style.display = 'none';
     setStatus('');
 }
 
