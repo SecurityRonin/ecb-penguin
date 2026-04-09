@@ -1,6 +1,5 @@
 # ECB Penguin — Interactive AES Encryption Demo
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/placeholder/deploy-status)](https://ecb-penguin.securityronin.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Sponsor](https://img.shields.io/badge/Sponsor-♥-ea4aaa?logo=github)](https://github.com/sponsors/h4x0r)
 
