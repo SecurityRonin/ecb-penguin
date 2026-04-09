@@ -874,6 +874,55 @@ async function encryptECB(pixelData, passphrase, keySize) {
     return out;
 }
 
+/* ─── AES-ECB decryption ──────────────────────────────────────── */
+// WebCrypto has no raw ECB mode. To decrypt a single ECB block:
+// 1. The ciphertext block was produced by: C = AES_encrypt(K, P)
+// 2. We need P = AES_decrypt(K, C)
+// 3. AES-CBC decrypt expects PKCS7-padded input (at least 2 blocks for 1 block of plaintext)
+// 4. Trick: encrypt a PKCS7 padding block (16×0x10) using C as the IV to get the
+//    second ciphertext block, then feed [C, C_pad] to AES-CBC decrypt with zero IV.
+async function decryptECB(encBytes, passphrase, keySize) {
+    const keyBytes = await deriveKeyBytes(passphrase, keySize);
+    const cryptoKey = await crypto.subtle.importKey(
+        'raw', keyBytes, { name: 'AES-CBC' }, false, ['encrypt', 'decrypt']
+    );
+
+    const zeroIV = new Uint8Array(16);
+    const pad16 = new Uint8Array(16).fill(16); // PKCS7 padding for 16-byte block
+    const promises = [];
+
+    for (let i = 0; i < encBytes.length; i += 16) {
+        const block = encBytes.slice(i, i + 16);
+        promises.push(
+            // Step 1: Encrypt padding block with ciphertext block as IV
+            crypto.subtle.encrypt({ name: 'AES-CBC', iv: block }, cryptoKey, pad16)
+                .then(encPad => {
+                    // Step 2: Construct valid 2-block ciphertext [C, C_pad]
+                    const ct = new Uint8Array(32);
+                    ct.set(block, 0);
+                    ct.set(new Uint8Array(encPad).slice(0, 16), 16);
+                    // Step 3: AES-CBC decrypt with zero IV recovers plaintext
+                    return crypto.subtle.decrypt({ name: 'AES-CBC', iv: zeroIV }, cryptoKey, ct);
+                })
+        );
+    }
+
+    const results = await Promise.all(promises);
+    const out = new Uint8Array(encBytes.length);
+    results.forEach((dec, idx) => out.set(new Uint8Array(dec).slice(0, 16), idx * 16));
+    return out;
+}
+
+/* ─── AES-GCM decryption ─────────────────────────────────────── */
+async function decryptGCM(fullCiphertext, passphrase, keySize, iv) {
+    const keyBytes = await deriveKeyBytes(passphrase, keySize);
+    const cryptoKey = await crypto.subtle.importKey(
+        'raw', keyBytes, { name: 'AES-GCM' }, false, ['decrypt']
+    );
+    const dec = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, cryptoKey, fullCiphertext);
+    return new Uint8Array(dec);
+}
+
 /* ─── AES-GCM ──────────────────────────────────────────────────── */
 async function encryptGCM(pixelData, passphrase, keySize) {
     const keyBytes = await deriveKeyBytes(passphrase, keySize);
@@ -1092,7 +1141,60 @@ function kdResetStep() {
 }
 
 async function doDecrypt() {
-    // Stub — implemented in Task 2
+    if (!lastEcbBytes) return;
+    const pass = sanitizeKey(document.getElementById('keyInput').value);
+    const keySize = parseInt(document.getElementById('keySize').value);
+    const btn = document.getElementById('decryptBtn');
+
+    btn.disabled = true;
+    btn.textContent = '…';
+    setStatus('Decrypting ECB…');
+
+    try {
+        // ECB decryption — always "succeeds" (no authentication)
+        const ecbDec = await decryptECB(lastEcbBytes, pass, keySize);
+        renderBytes(document.getElementById('canvasECB'), ecbDec);
+
+        // Check if result matches original
+        const origCtx = document.getElementById('canvasOrig').getContext('2d');
+        const origData = new Uint8Array(origCtx.getImageData(0, 0, W, H).data.buffer);
+        const ecbMatch = ecbDec.every((b, i) => b === origData[i]);
+
+        if (ecbMatch) {
+            document.getElementById('ecbFoot').innerHTML =
+                '<span style="color:var(--success)">Decrypted — matches original! Correct key reverses ECB.</span>';
+        } else {
+            document.getElementById('ecbFoot').innerHTML =
+                '<strong style="color:var(--danger)">Wrong key — ECB decrypted to garbage. No error, no warning. Silent failure.</strong>';
+        }
+
+        // GCM decryption
+        if (lastGcmFull && lastGcmIv) {
+            setStatus('Decrypting GCM…');
+            try {
+                const gcmDec = await decryptGCM(lastGcmFull, pass, keySize, lastGcmIv);
+                renderBytes(document.getElementById('canvasGCM'), gcmDec);
+                document.getElementById('gcmFoot').innerHTML =
+                    '<span style="color:var(--success)">Decrypted — matches original! GCM verified authenticity.</span>';
+                const overlay = document.getElementById('gcmAuthOverlay');
+                if (overlay) overlay.style.display = 'none';
+            } catch (e) {
+                const ctx = document.getElementById('canvasGCM').getContext('2d');
+                ctx.clearRect(0, 0, W, H);
+                const overlay = document.getElementById('gcmAuthOverlay');
+                if (overlay) overlay.style.display = 'flex';
+                document.getElementById('gcmFoot').innerHTML =
+                    '<strong style="color:var(--danger)">GCM refused to decrypt — authentication tag mismatch. Tampering or wrong key detected!</strong>';
+            }
+        }
+
+        setStatus('Decryption complete — compare ECB (silent failure) vs GCM (loud failure) with wrong key.');
+    } catch (e) {
+        setStatus('Error: ' + e.message);
+    }
+
+    btn.disabled = false;
+    btn.textContent = 'Decrypt';
 }
 
 /* ─── Init ─────────────────────────────────────────────────────── */
