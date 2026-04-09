@@ -502,6 +502,134 @@
 }
 
 .df-stage { align-items: center; }
+
+/* ── Timeline (Panel 4) ── */
+.tl-track {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    position: relative;
+    padding: 0.5rem 0 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.tl-line {
+    position: absolute;
+    top: 18px;
+    left: 5%;
+    right: 5%;
+    height: 3px;
+    background: linear-gradient(to right, var(--danger), var(--warning), #e3b341, var(--success));
+    border-radius: 2px;
+    z-index: 0;
+}
+
+.tl-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    z-index: 1;
+    gap: 0.3rem;
+    transition: transform 0.15s;
+}
+
+.tl-node:hover { transform: scale(1.1); }
+
+.tl-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 3px solid var(--bg);
+    transition: box-shadow 0.2s;
+}
+
+.tl-node-danger .tl-dot { background: var(--danger); }
+.tl-node-warn .tl-dot   { background: var(--warning); }
+.tl-node-attack .tl-dot  { background: #e3b341; }
+.tl-node-safe .tl-dot    { background: var(--success); }
+
+.tl-node.tl-active .tl-dot {
+    box-shadow: 0 0 0 4px var(--bg), 0 0 0 6px currentColor;
+}
+.tl-node-danger.tl-active { color: var(--danger); }
+.tl-node-warn.tl-active   { color: var(--warning); }
+.tl-node-attack.tl-active  { color: #e3b341; }
+.tl-node-safe.tl-active    { color: var(--success); }
+
+.tl-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text);
+}
+
+.tl-year {
+    font-size: 0.58rem;
+    color: var(--muted);
+}
+
+.tl-detail {
+    display: none;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 0.5rem;
+}
+
+.tl-detail.tl-open { display: block; }
+
+.tl-detail h4 {
+    font-size: 0.85rem;
+    margin-bottom: 0.6rem;
+}
+
+.tl-detail p { margin-bottom: 0.6rem; }
+.tl-detail p:last-child { margin-bottom: 0; }
+
+.tl-takeaway {
+    background: var(--surface2);
+    border-left: 3px solid var(--accent);
+    padding: 0.5rem 0.75rem;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.78rem;
+    color: var(--accent);
+}
+
+.tl-attacks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+}
+
+.tl-attack {
+    display: grid;
+    grid-template-columns: 3.5rem 6.5rem 1fr;
+    gap: 0.4rem;
+    align-items: baseline;
+    font-size: 0.78rem;
+}
+
+.tl-attack-year {
+    color: var(--danger);
+    font-weight: 700;
+    font-size: 0.72rem;
+}
+
+.tl-attack-name {
+    font-weight: 700;
+    color: var(--warning);
+}
+
+.tl-attack-desc {
+    color: var(--muted);
+}
     </style>
 </head>
 <body>
@@ -723,6 +851,92 @@
         <div class="kd-controls" style="margin-top:1rem">
             <button class="btn-secondary" onclick="dfReset()">Reset</button>
             <button class="btn-primary" id="ecbGcmStep" onclick="dfNextStep()">Step →</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── Panel 4: Real-World Impact ── -->
+<div class="edu-panel" id="realWorldImpact">
+    <div class="edu-panel-title">Real-World Impact — Why This Matters</div>
+    <div class="edu-panel-body">
+        <p class="edu-desc">The encryption mode your product uses determines its security grade. Here's how the industry evolved from broken to battle-tested.</p>
+
+        <div class="tl-track">
+            <div class="tl-line"></div>
+
+            <div class="tl-node tl-node-danger" onclick="tlToggle(0)" id="tlNode0">
+                <div class="tl-dot"></div>
+                <div class="tl-label">ECB</div>
+                <div class="tl-year">1970s</div>
+            </div>
+
+            <div class="tl-node tl-node-warn" onclick="tlToggle(1)" id="tlNode1">
+                <div class="tl-dot"></div>
+                <div class="tl-label">CBC</div>
+                <div class="tl-year">1996</div>
+            </div>
+
+            <div class="tl-node tl-node-attack" onclick="tlToggle(2)" id="tlNode2">
+                <div class="tl-dot"></div>
+                <div class="tl-label">Attacks</div>
+                <div class="tl-year">2011–19</div>
+            </div>
+
+            <div class="tl-node tl-node-safe" onclick="tlToggle(3)" id="tlNode3">
+                <div class="tl-dot"></div>
+                <div class="tl-label">GCM</div>
+                <div class="tl-year">2008+</div>
+            </div>
+        </div>
+
+        <div class="tl-detail" id="tlDetail0">
+            <h4>ECB — Never Used in Any Internet Protocol</h4>
+            <p>ECB is so fundamentally broken that <strong>no version of SSL or TLS has ever used it</strong>. The protocol designers skipped it entirely. Qualys SSL Labs doesn't even test for ECB — there's nothing to test.</p>
+            <p><strong>NIST IR 8459 (2024)</strong> proposes formally retiring ECB as a confidentiality mode. <strong>OWASP</strong> states plainly: "ECB should not be used."</p>
+            <p class="tl-takeaway">If a product encrypts data with ECB mode, it has a fundamental design flaw — not a configuration issue.</p>
+        </div>
+
+        <div class="tl-detail" id="tlDetail1">
+            <h4>CBC — Better, But Vulnerable to Padding Attacks</h4>
+            <p>CBC mode chains blocks together, hiding the patterns that ECB leaks. But it introduced a new weakness: <strong>padding verification</strong>.</p>
+            <p>After decryption, the receiver checks if the PKCS#7 padding is valid — the last N bytes should all equal N. If the server responds differently to "bad padding" vs "bad data" — even through <strong>timing differences as small as microseconds</strong> — an attacker can flip ciphertext bits and observe the response to <strong>deduce the plaintext byte by byte</strong>, without ever knowing the key.</p>
+            <p>Think of it like a lock that says "almost right" when you guess wrong — an attacker uses those hints to find the combination.</p>
+            <p class="tl-takeaway">Products using TLS 1.0–1.2 with CBC cipher suites should be assessed for padding oracle mitigations.</p>
+        </div>
+
+        <div class="tl-detail" id="tlDetail2">
+            <h4>The Kill Chain: Four Attacks That Ended CBC</h4>
+            <div class="tl-attacks">
+                <div class="tl-attack">
+                    <span class="tl-attack-year">2011</span>
+                    <span class="tl-attack-name">BEAST</span>
+                    <span class="tl-attack-desc">Exploited predictable IVs in TLS 1.0 CBC to decrypt HTTPS cookies in real time.</span>
+                </div>
+                <div class="tl-attack">
+                    <span class="tl-attack-year">2013</span>
+                    <span class="tl-attack-name">Lucky13</span>
+                    <span class="tl-attack-desc">Used microsecond timing differences in padding verification to extract plaintext — affected every TLS library.</span>
+                </div>
+                <div class="tl-attack">
+                    <span class="tl-attack-year">2014</span>
+                    <span class="tl-attack-name">POODLE</span>
+                    <span class="tl-attack-desc">Forced a downgrade to SSL 3.0 and exploited its broken CBC padding to steal session tokens.</span>
+                </div>
+                <div class="tl-attack">
+                    <span class="tl-attack-year">2019</span>
+                    <span class="tl-attack-name">GoldenDoodle</span>
+                    <span class="tl-attack-desc">Found padding oracle vulnerabilities in modern TLS stacks years after they were supposedly fixed.</span>
+                </div>
+            </div>
+            <p class="tl-takeaway">Each attack proved CBC's padding verification is an inherent liability — patching one variant doesn't prevent the next.</p>
+        </div>
+
+        <div class="tl-detail" id="tlDetail3">
+            <h4>GCM — The Modern Standard</h4>
+            <p><strong>TLS 1.3 (2018) eliminated CBC entirely</strong>, requiring only AEAD modes: GCM and ChaCha20-Poly1305. Authentication and encryption are inseparable — there is no padding to attack.</p>
+            <p><strong>Qualys SSL Labs</strong> requires GCM/AEAD cipher suites for an A+ grade. Without them, your grade is capped. Without TLS 1.3, you're capped at A-.</p>
+            <p>GCM doesn't just keep secrets — it detects if anyone tampered with the data. The authentication tag is a cryptographic proof of integrity that fails loudly on any modification.</p>
+            <p class="tl-takeaway">When evaluating products, verify they support TLS 1.3 with GCM cipher suites. Check with <a href="https://www.ssllabs.com/ssltest/" target="_blank" rel="noopener" style="color:var(--accent)">ssllabs.com/ssltest</a>.</p>
         </div>
     </div>
 </div>
@@ -1202,6 +1416,23 @@ async function doDecrypt() {
 
     btn.disabled = false;
     btn.textContent = 'Decrypt';
+}
+
+/* ─── Panel 4: Real-World Impact Timeline ─────────────────────── */
+function tlToggle(idx) {
+    const wasOpen = document.getElementById('tlDetail' + idx).classList.contains('tl-open');
+
+    // Close all
+    for (let i = 0; i < 4; i++) {
+        document.getElementById('tlDetail' + i).classList.remove('tl-open');
+        document.getElementById('tlNode' + i).classList.remove('tl-active');
+    }
+
+    // Open clicked (if it wasn't already open — accordion toggle)
+    if (!wasOpen) {
+        document.getElementById('tlDetail' + idx).classList.add('tl-open');
+        document.getElementById('tlNode' + idx).classList.add('tl-active');
+    }
 }
 
 /* ─── Init ─────────────────────────────────────────────────────── */
