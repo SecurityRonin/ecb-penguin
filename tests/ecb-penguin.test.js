@@ -304,6 +304,20 @@ test.describe('Educational Panels', () => {
         expect(openId).toBe('tlDetail2');
     });
 
+    test('Heatmap toggle button exists on ECB panel', async ({ page }) => {
+        await expect(page.locator('#heatmapBtn')).toBeVisible();
+    });
+
+    test('Heatmap overlay appears after encryption and toggle', async ({ page }) => {
+        await page.click('#encryptBtn');
+        await page.waitForFunction(
+            () => document.getElementById('statusBar').textContent.includes('Done'),
+            { timeout: 60000 }
+        );
+        await page.click('#heatmapBtn');
+        await expect(page.locator('#canvasHeatmap')).toBeVisible();
+    });
+
     test('ECB duplicate warning appears after all steps', async ({ page }) => {
         // 6 steps total
         for (let i = 0; i < 6; i++) await page.click('#ecbGcmStep');
