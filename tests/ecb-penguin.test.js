@@ -355,6 +355,37 @@ test.describe('Educational Panels', () => {
         await expect(page.locator('#bfGcmFail')).toBeVisible();
     });
 
+    test('Controls stack vertically on mobile viewport', async ({ page }) => {
+        await page.setViewportSize({ width: 375, height: 812 });
+        await page.goto('/');
+        await page.waitForFunction(() => {
+            const c = document.getElementById('canvasOrig');
+            const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+            for (let i = 0; i < d.length; i += 4) {
+                if (d[i] > 0 || d[i+1] > 0 || d[i+2] > 0) return true;
+            }
+            return false;
+        }, { timeout: 20000 });
+
+        // Controls should not overflow the viewport
+        const controls = page.locator('.controls');
+        const box = await controls.boundingBox();
+        expect(box.width).toBeLessThanOrEqual(375);
+
+        // Controls should use column layout (flex-direction: column)
+        const flexDir = await controls.evaluate(el => getComputedStyle(el).flexDirection);
+        expect(flexDir).toBe('column');
+
+        // Each ctrl-group should be full width
+        const groups = page.locator('.controls .ctrl-group');
+        const count = await groups.count();
+        for (let i = 0; i < count; i++) {
+            const gBox = await groups.nth(i).boundingBox();
+            // Each group should span nearly the full controls width (minus padding)
+            expect(gBox.width).toBeGreaterThan(box.width * 0.8);
+        }
+    });
+
     test('ECB duplicate warning appears after all steps', async ({ page }) => {
         // 6 steps total
         for (let i = 0; i < 6; i++) await page.click('#ecbGcmStep');
